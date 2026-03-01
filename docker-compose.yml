@@ -1,0 +1,16 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: gestao-treino-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: gestao_treino
+    ports:
+      - "5435:5432"
+    volumes:
+      - gestao_treino_data:/var/lib/postgresql/data
+
+volumes:
+  gestao_treino_data:
