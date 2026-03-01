@@ -11,8 +11,16 @@ export default defineConfig([
     extends: ["js/recommended"],
     languageOptions: { globals: globals.node },
   },
-  tseslint.configs.recommended,
-  { languageOptions: { globals: globals.node } },
+  ...tseslint.configs.recommended,
+  {
+    languageOptions: {
+      globals: globals.node,
+      parserOptions: {
+        project: true,
+        tsconfigRootDir: import.meta.dirname,
+      },
+    },
+  },
   eslintConfigPrettier,
   {
     plugins: {
