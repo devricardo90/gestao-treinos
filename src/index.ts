@@ -1,7 +1,7 @@
 import "dotenv/config";
 
 import fastifySwagger from "@fastify/swagger";
-import fastifySwaggerUi from "@fastify/swagger-ui";
+import ScalarApiReference from "@scalar/fastify-api-reference";
 import Fastify from "fastify";
 import {
   jsonSchemaTransform,
@@ -71,8 +71,26 @@ await app.register(fastifySwagger, {
   transform: jsonSchemaTransform,
 });
 
-await app.register(fastifySwaggerUi, {
+await app.register(ScalarApiReference, {
   routePrefix: "/docs",
+  openApiDocumentEndpoints: {
+    json: "/openapi.json",
+    yaml: "/openapi.yaml",
+  },
+  configuration: {
+    title: "Gestão de Treino API",
+    theme: "deepSpace",
+  },
+  logLevel: "silent",
+});
+
+app.withTypeProvider<ZodTypeProvider>().route({
+  method: "GET",
+  url: "/swagger.json",
+  schema: { hide: true },
+  handler: async () => {
+    return app.swagger();
+  },
 });
 
 app.withTypeProvider<ZodTypeProvider>().route({
