@@ -8,7 +8,10 @@ import {
   CreateWorkoutPlanResponseSchema,
   ErrorSchema,
 } from "../shemas/index.js";
-import { CreateWorkoutPlan } from "../usercases/CreateWorkoutPlan.js";
+import {
+  CreateWorkoutPlan,
+  CreateWorkoutPlanInputDto,
+} from "../usercases/CreateWorkoutPlan.js";
 
 export const workoutPlanRoutes = async (app: FastifyInstance) => {
   app.withTypeProvider<ZodTypeProvider>().route({
@@ -41,11 +44,13 @@ export const workoutPlanRoutes = async (app: FastifyInstance) => {
       try {
         const createWorkoutPlan = new CreateWorkoutPlan();
 
-        const result = await createWorkoutPlan.execute({
+        const payload: CreateWorkoutPlanInputDto = {
           userId: session.user.id,
           name: request.body.name,
           workoutDays: request.body.workoutDays,
-        });
+        };
+
+        const result = await createWorkoutPlan.execute(payload);
 
         return reply.status(201).send(result);
       } catch (error) {
