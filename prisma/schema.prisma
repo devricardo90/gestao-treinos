@@ -14,18 +14,18 @@ datasource db {
 }
 
 model User {
-  id            String        @id @default(uuid())
+  id            String   @id
   name          String
-  email         String        @unique
-  emailVerified Boolean       @default(false) @map("email_verified")
+  email         String   @unique
+  emailVerified Boolean  @default(false) @map("email_verified")
   image         String?
   password      String?
-  createdAt     DateTime      @default(now()) @map("created_at")
-  updatedAt     DateTime      @updatedAt @map("updated_at")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
 
-  sessions      Session[]
-  accounts      Account[]
-  workoutPlans  WorkoutPlan[]
+  sessions     Session[]
+  accounts     Account[]
+  workoutPlans WorkoutPlan[]
 
   @@map("users")
 }
@@ -98,29 +98,31 @@ enum Weekday {
 }
 
 model WorkoutDay {
-  id               String            @id @default(uuid())
-  name             String
-  workoutPlanId    String            @map("workout_plan_id")
-  workoutPlan      WorkoutPlan       @relation(fields: [workoutPlanId], references: [id])
-  isRest           Boolean           @default(false) @map("is_rest")
-  weekday          Weekday
-  workoutExercises WorkoutExercise[]
-  createdAt        DateTime          @default(now()) @map("created_at")
-  updatedAt        DateTime          @updatedAt @map("updated_at")
+  id                         String            @id @default(uuid())
+  name                       String
+  workoutPlanId              String            @map("workout_plan_id")
+  workoutPlan                WorkoutPlan       @relation(fields: [workoutPlanId], references: [id])
+  isRest                     Boolean           @default(false) @map("is_rest")
+  weekday                    Weekday
+  estimatedDurationInSeconds Int               @default(0) @map("estimated_duration_in_seconds")
+  workoutExercises           WorkoutExercise[]
+  createdAt                  DateTime          @default(now()) @map("created_at")
+  updatedAt                  DateTime          @updatedAt @map("updated_at")
 
   @@map("workout_days")
 }
 
 model WorkoutExercise {
-  id                 String     @id @default(uuid())
-  name               String
-  workoutDayId       String     @map("workout_day_id")
-  workoutDay         WorkoutDay @relation(fields: [workoutDayId], references: [id])
-  order              Int
-  reps               Int
-  restTimeInSeconds  Int        @map("rest_time_in_seconds")
-  createdAt          DateTime   @default(now()) @map("created_at")
-  updatedAt          DateTime   @updatedAt @map("updated_at")
+  id                String     @id @default(uuid())
+  name              String
+  workoutDayId      String     @map("workout_day_id")
+  workoutDay        WorkoutDay @relation(fields: [workoutDayId], references: [id])
+  order             Int
+  sets              Int        @default(1)
+  reps              Int
+  restTimeInSeconds Int        @map("rest_time_in_seconds")
+  createdAt         DateTime   @default(now()) @map("created_at")
+  updatedAt         DateTime   @updatedAt @map("updated_at")
 
   @@map("workout_exercises")
 }

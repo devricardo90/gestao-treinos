@@ -1,7 +1,9 @@
 import "dotenv/config";
 
+import fastifyCors from "@fastify/cors";
 import fastifySwagger from "@fastify/swagger";
 import ScalarApiReference from "@scalar/fastify-api-reference";
+import { fromNodeHeaders } from "better-auth/node";
 import Fastify from "fastify";
 import {
   jsonSchemaTransform,
@@ -11,9 +13,17 @@ import {
 } from "fastify-type-provider-zod";
 import { z } from "zod";
 
+import { Weekday } from "./generated/prisma/enums.js";
 import { auth } from "./lib/auth.js";
+import { prisma } from "./lib/prisma.js";
+import { CreateWorkoutPlan } from "./usercases/CreateWorkoutPlan.js";
 
 export const app = Fastify({ logger: true });
+
+// Register CORS
+await app.register(fastifyCors, {
+  origin: "*",
+});
 
 app.setValidatorCompiler(validatorCompiler);
 app.setSerializerCompiler(serializerCompiler);
@@ -24,23 +34,21 @@ app.route({
   url: "/api/auth/*",
   async handler(request, reply) {
     try {
-      // Construct request URL
       const url = new URL(request.url, `http://${request.headers.host}`);
-
-      // Convert Fastify headers to standard Headers object
       const headers = new Headers();
+
       Object.entries(request.headers).forEach(([key, value]) => {
         if (value) headers.append(key, value.toString());
       });
-      // Create Fetch API-compatible request
+
       const req = new Request(url.toString(), {
         method: request.method,
         headers,
         ...(request.body ? { body: JSON.stringify(request.body) } : {}),
       });
-      // Process authentication request
+
       const response = await auth.handler(req);
-      // Forward response to client
+
       reply.status(response.status);
       response.headers.forEach((value, key) => reply.header(key, value));
       reply.send(response.body ? await response.text() : null);
@@ -69,6 +77,28 @@ await app.register(fastifySwagger, {
     ],
   },
   transform: jsonSchemaTransform,
+});
+
+// Adicione isso para a rota aparecer na documentação
+app.withTypeProvider<ZodTypeProvider>().route({
+  method: "POST",
+  url: "/api/auth/sign-up/email",
+  schema: {
+    tags: ["Autenticação"],
+    description: "Criar uma nova conta",
+    body: z.object({
+      email: z.string().email(),
+      password: z.string().min(8),
+      name: z.string().min(2),
+    }),
+    response: {
+      200: z.any(),
+    },
+  },
+  handler: async (_request, _reply) => {
+    // Esse handler será "ignorado" porque a rota /api/auth/*
+    // vai capturar a requisição antes, mas o Scalar vai ler esse schema.
+  },
 });
 
 await app.register(ScalarApiReference, {
@@ -112,8 +142,120 @@ app.withTypeProvider<ZodTypeProvider>().route({
   },
 });
 
+app.withTypeProvider<ZodTypeProvider>().route({
+  method: "GET",
+  url: "/users",
+  schema: {
+    description: "Listar todos os usuários",
+    tags: ["Usuários"],
+    response: {
+      200: z.array(
+        z.object({
+          id: z.string(),
+          name: z.string(),
+          email: z.string(),
+        }),
+      ),
+    },
+  },
+  handler: async () => {
+    const users = await prisma.user.findMany({
+      select: {
+        id: true,
+        name: true,
+        email: true,
+      },
+    });
+
+    return users;
+  },
+});
+
+app.withTypeProvider<ZodTypeProvider>().route({
+  method: "POST",
+  url: "/workout-plans",
+  schema: {
+    description: "Criar um novo plano de treino",
+    tags: ["Planos de Treino"],
+    body: z.object({
+      name: z.string().trim().min(1),
+      workoutDays: z.array(
+        z.object({
+          name: z.string().trim().min(1),
+          isRest: z.boolean().default(false),
+          weekday: z.enum(Weekday),
+          estimatedDurationInSeconds: z.number().min(1),
+          exercises: z.array(
+            z.object({
+              order: z.number().min(0),
+              name: z.string().trim().min(1),
+              sets: z.number().min(1),
+              reps: z.number().min(1),
+              restTimeInSeconds: z.number().min(1),
+            }),
+          ),
+        }),
+      ),
+    }),
+    response: {
+      201: z.object({
+        id: z.string(),
+        name: z.string().trim().min(1),
+        workoutDays: z.array(
+          z.object({
+            id: z.string(),
+            name: z.string().trim().min(1),
+            weekday: z.enum(Weekday),
+            isRest: z.boolean(),
+            estimatedDurationInSeconds: z.number().int().min(1),
+            workoutExercises: z.array(
+              z.object({
+                id: z.string(),
+                order: z.number().min(0),
+                name: z.string().trim().min(1),
+                sets: z.number().min(1),
+                reps: z.number().min(1),
+                restTimeInSeconds: z.number().min(1),
+              }),
+            ),
+          }),
+        ),
+      }),
+      401: z.object({
+        error: z.string(),
+        code: z.string(),
+      }),
+    },
+  },
+  handler: async (request, reply) => {
+    const session = await auth.api.getSession({
+      headers: fromNodeHeaders(request.headers),
+    });
+
+    if (!session) {
+      return reply.status(401).send({
+        error: "Unauthorized",
+        code: "UNAUTHORIZED",
+      });
+    }
+
+    const createWorkoutPlan = new CreateWorkoutPlan();
+
+    const result = await createWorkoutPlan.execute({
+      userId: session.user.id,
+      name: request.body.name,
+      workoutDays: request.body.workoutDays,
+    });
+
+    return reply.status(201).send(result);
+  },
+});
+
 try {
-  await app.listen({ port: Number(process.env.PORT) || 3000, host: "0.0.0.0" });
+  await app.listen({
+    port: Number(process.env.PORT) || 3333,
+    host: "0.0.0.0",
+  });
 } catch (err) {
   app.log.error(err instanceof Error ? err : new Error(String(err)));
   process.exit(1);
