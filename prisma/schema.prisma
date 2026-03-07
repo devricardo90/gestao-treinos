@@ -23,9 +23,10 @@ model User {
   createdAt     DateTime @default(now()) @map("created_at")
   updatedAt     DateTime @updatedAt @map("updated_at")
 
-  sessions     Session[]
-  accounts     Account[]
-  workoutPlans WorkoutPlan[]
+  sessions        Session[]
+  accounts        Account[]
+  workoutPlans    WorkoutPlan[]
+  workoutSessions WorkoutSession[]
 
   @@map("users")
 }
@@ -78,11 +79,11 @@ model WorkoutPlan {
   id          String       @id @default(uuid())
   name        String
   userId      String       @map("user_id")
-  user        User         @relation(fields: [userId], references: [id])
+  user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
   isActive    Boolean      @default(true) @map("is_active")
   workoutDays WorkoutDay[]
-  createdAt   DateTime     @default(now()) @map("created_at")
-  updatedAt   DateTime     @updatedAt @map("updated_at")
+  createdAt   DateTime     @default(now()) @map("created_at") @db.Timestamptz()
+  updatedAt   DateTime     @updatedAt @map("updated_at") @db.Timestamptz()
 
   @@map("workout_plans")
 }
@@ -101,13 +102,14 @@ model WorkoutDay {
   id                         String            @id @default(uuid())
   name                       String
   workoutPlanId              String            @map("workout_plan_id")
-  workoutPlan                WorkoutPlan       @relation(fields: [workoutPlanId], references: [id])
+  workoutPlan                WorkoutPlan       @relation(fields: [workoutPlanId], references: [id], onDelete: Cascade)
   isRest                     Boolean           @default(false) @map("is_rest")
   weekday                    Weekday
   estimatedDurationInSeconds Int               @default(0) @map("estimated_duration_in_seconds")
   workoutExercises           WorkoutExercise[]
-  createdAt                  DateTime          @default(now()) @map("created_at")
-  updatedAt                  DateTime          @updatedAt @map("updated_at")
+  workoutSessions            WorkoutSession[]
+  createdAt                  DateTime          @default(now()) @map("created_at") @db.Timestamptz()
+  updatedAt                  DateTime          @updatedAt @map("updated_at") @db.Timestamptz()
 
   @@map("workout_days")
 }
@@ -116,13 +118,27 @@ model WorkoutExercise {
   id                String     @id @default(uuid())
   name              String
   workoutDayId      String     @map("workout_day_id")
-  workoutDay        WorkoutDay @relation(fields: [workoutDayId], references: [id])
+  workoutDay        WorkoutDay @relation(fields: [workoutDayId], references: [id], onDelete: Cascade)
   order             Int
   sets              Int        @default(1)
   reps              Int
   restTimeInSeconds Int        @map("rest_time_in_seconds")
-  createdAt         DateTime   @default(now()) @map("created_at")
-  updatedAt         DateTime   @updatedAt @map("updated_at")
+  createdAt         DateTime   @default(now()) @map("created_at") @db.Timestamptz()
+  updatedAt         DateTime   @updatedAt @map("updated_at") @db.Timestamptz()
 
   @@map("workout_exercises")
+}
+
+model WorkoutSession {
+  id           String     @id @default(uuid())
+  workoutDayId String     @map("workout_day_id")
+  workoutDay   WorkoutDay @relation(fields: [workoutDayId], references: [id], onDelete: Cascade)
+  userId       String     @map("user_id")
+  user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  startedAt    DateTime   @map("started_at") @db.Timestamptz()
+  completedAt  DateTime?  @map("completed_at") @db.Timestamptz()
+  createdAt    DateTime   @default(now()) @map("created_at") @db.Timestamptz()
+  updatedAt    DateTime   @updatedAt @map("updated_at") @db.Timestamptz()
+
+  @@map("workout_sessions")
 }

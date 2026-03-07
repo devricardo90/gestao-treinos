@@ -3,7 +3,6 @@ import "dotenv/config";
 import fastifyCors from "@fastify/cors";
 import fastifySwagger from "@fastify/swagger";
 import ScalarApiReference from "@scalar/fastify-api-reference";
-import { fromNodeHeaders } from "better-auth/node";
 import Fastify from "fastify";
 import {
   jsonSchemaTransform,
@@ -13,10 +12,8 @@ import {
 } from "fastify-type-provider-zod";
 import { z } from "zod";
 
-import { Weekday } from "./generated/prisma/enums.js";
-import { auth } from "./lib/auth.js";
 import { prisma } from "./lib/prisma.js";
-import { CreateWorkoutPlan } from "./usercases/CreateWorkoutPlan.js";
+import { workoutPlanRoutes } from "./router/workout-plan.js";
 
 export const app = Fastify({ logger: true });
 
@@ -171,85 +168,7 @@ app.withTypeProvider<ZodTypeProvider>().route({
   },
 });
 
-app.withTypeProvider<ZodTypeProvider>().route({
-  method: "POST",
-  url: "/workout-plans",
-  schema: {
-    description: "Criar um novo plano de treino",
-    tags: ["Planos de Treino"],
-    body: z.object({
-      name: z.string().trim().min(1),
-      workoutDays: z.array(
-        z.object({
-          name: z.string().trim().min(1),
-          isRest: z.boolean().default(false),
-          weekday: z.enum(Weekday),
-          estimatedDurationInSeconds: z.number().min(1),
-          exercises: z.array(
-            z.object({
-              order: z.number().min(0),
-              name: z.string().trim().min(1),
-              sets: z.number().min(1),
-              reps: z.number().min(1),
-              restTimeInSeconds: z.number().min(1),
-            }),
-          ),
-        }),
-      ),
-    }),
-    response: {
-      201: z.object({
-        id: z.string(),
-        name: z.string().trim().min(1),
-        workoutDays: z.array(
-          z.object({
-            id: z.string(),
-            name: z.string().trim().min(1),
-            weekday: z.enum(Weekday),
-            isRest: z.boolean(),
-            estimatedDurationInSeconds: z.number().int().min(1),
-            workoutExercises: z.array(
-              z.object({
-                id: z.string(),
-                order: z.number().min(0),
-                name: z.string().trim().min(1),
-                sets: z.number().min(1),
-                reps: z.number().min(1),
-                restTimeInSeconds: z.number().min(1),
-              }),
-            ),
-          }),
-        ),
-      }),
-      401: z.object({
-        error: z.string(),
-        code: z.string(),
-      }),
-    },
-  },
-  handler: async (request, reply) => {
-    const session = await auth.api.getSession({
-      headers: fromNodeHeaders(request.headers),
-    });
-
-    if (!session) {
-      return reply.status(401).send({
-        error: "Unauthorized",
-        code: "UNAUTHORIZED",
-      });
-    }
-
-    const createWorkoutPlan = new CreateWorkoutPlan();
-
-    const result = await createWorkoutPlan.execute({
-      userId: session.user.id,
-      name: request.body.name,
-      workoutDays: request.body.workoutDays,
-    });
-
-    return reply.status(201).send(result);
-  },
-});
+await app.register(workoutPlanRoutes);
 
 try {
   await app.listen({
