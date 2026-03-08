@@ -52,11 +52,33 @@ export const aiRoutes = async (app: FastifyInstance) => {
 
         const result = streamText({
           model: openai("gpt-4o-mini"),
-          system:
-            "Você é um assistente pessoal de treinos. Você pode: 1. Ajudar com dúvidas sobre exercícios e nutrição. 2. Criar planos de treino. 3. Consultar e atualizar os dados físicos do usuário (peso, altura, idade, bf%). 4. Listar os planos de treino atuais. Use as ferramentas sempre que necessário para dar respostas precisas baseadas nos dados do usuário.",
+          system: `Você é um personal trainer virtual especialista em montagem de planos de treino.
+Seu tom é amigável, motivador e você usa linguagem simples, sem jargões técnicos.
+
+REGRAS OBRIGATÓRIAS:
+1. SEMPRE chame a tool 'getUserTrainData' antes de qualquer outra interação para conhecer o usuário.
+2. Se o usuário NÃO tiver dados cadastrados (retorno null): pergunte nome, peso (kg), altura (cm), idade e % de gordura corporal em uma única mensagem curta.
+3. Ao receber os dados, use a tool 'updateUserTrainData'. IMPORTANTE: Converta o peso de kg para gramas (multiplique por 1000). O % de gordura deve ser enviado como inteiro (ex: 15 para 15%).
+4. Se o usuário já tiver dados: cumprimente-o pelo nome.
+5. Para criar um treino: pergunte o objetivo, dias por semana e restrições físicos.
+6. O plano DEVE ter exatamente 7 dias (MONDAY a SUNDAY). Dias sem treino: isRest: true, exercises: [], estimatedDuration: 0.
+7. DIVISÕES DE TREINO (Splits):
+   - 2-3 dias: Full Body ou ABC.
+   - 4 dias: Upper/Lower ou ABCD.
+   - 5 dias: PPLUL (Push/Pull/Legs + Upper/Lower).
+   - 6 dias: PPL 2x.
+8. PRINCÍPIOS: Músculos sinérgicos juntos, compostos primeiro, 4-8 exercícios por dia, 3-4 séries, 8-12 reps (hipertrofia).
+9. IMAGENS DE CAPA (coverImageUrl):
+   - Superiores (peito, costas, etc): https://gw8hy3fdcv.ufs.sh/f/ccoBDpLoAPCO3y8pQ6GBg8iqe9pP2JrHjwd1nfKtVSQskI0v OU https://gw8hy3fdcv.ufs.sh/f/ccoBDpLoAPCOW3fJmqZe4yoUcwvRPQa8kmFprzNiC30hqftL
+   - Inferiores (pernas, etc): https://gw8hy3fdcv.ufs.sh/f/ccoBDpLoAPCOgCHaUgNGronCvXmSzAMs1N3KgLdE5yHT6Ykj OU https://gw8hy3fdcv.ufs.sh/f/ccoBDpLoAPCO85RVu3morROwZk5NPhs1jzH7X8TyEvLUCGxY
+   - Descanso usa imagem de superiores.
+   - Alterne entre as opções de cada categoria.
+
+Respostas curtas e objetivas sempre.`,
           tools: {
             getUserTrainData: tool({
-              description: "Recupera os dados físicos do usuário (peso, altura, idade, bf%).",
+              description:
+                "Recupera os dados físicos do usuário (peso, altura, idade, bf%).",
               inputSchema: z.object({}),
               execute: async () => {
                 const getUserTrainData = new GetUserTrainData();
@@ -69,9 +91,14 @@ export const aiRoutes = async (app: FastifyInstance) => {
               description: "Atualiza ou cria os dados físicos do usuário.",
               inputSchema: z.object({
                 weightInGrams: z.number().describe("Peso em gramas"),
-                heightInCentimeters: z.number().describe("Altura em centímetros"),
+                heightInCentimeters: z
+                  .number()
+                  .describe("Altura em centímetros"),
                 age: z.number().describe("Idade em anos"),
-                bodyFatPercentage: z.number().describe("Percentual de gordura corporal"),
+                bodyFatPercentage: z
+                  .number()
+                  .int()
+                  .describe("Percentual de gordura corporal (inteiro, ex: 15)"),
               }),
               execute: async (args) => {
                 const upsertUserTrainData = new UpsertUserTrainData();
@@ -83,14 +110,11 @@ export const aiRoutes = async (app: FastifyInstance) => {
             }),
             getWorkoutPlans: tool({
               description: "Lista os planos de treino do usuário.",
-              inputSchema: z.object({
-                active: z.boolean().optional().describe("Filtrar apenas por planos ativos"),
-              }),
-              execute: async (args) => {
+              inputSchema: z.object({}),
+              execute: async () => {
                 const listWorkoutPlans = new ListWorkoutPlans();
                 return await listWorkoutPlans.execute({
                   userId: session.user.id,
-                  isActive: args.active,
                 });
               },
             }),
@@ -116,10 +140,7 @@ export const aiRoutes = async (app: FastifyInstance) => {
                     coverImageUrl: z
                       .string()
                       .url()
-                      .optional()
-                      .describe(
-                        "URL da imagem de capa do dia de treino. Usar as URLs de superior ou inferior se tiver.",
-                      ),
+                      .describe("URL da imagem de capa do dia de treino."),
                     exercises: z
                       .array(
                         z.object({
