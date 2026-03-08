@@ -15,6 +15,7 @@ import { z } from "zod";
 import { auth } from "./lib/auth.js";
 import { prisma } from "./lib/prisma.js";
 import { homeRoutes } from "./routes/home.js";
+import { statsRoutes } from "./routes/stats.js";
 import { workoutPlanRoutes } from "./routes/workout-plan.js";
 
 export const app = Fastify({ logger: true });
@@ -170,8 +171,9 @@ app.withTypeProvider<ZodTypeProvider>().route({
   },
 });
 
-await app.register(homeRoutes);
-await app.register(workoutPlanRoutes);
+await  app.register(homeRoutes);
+  app.register(statsRoutes, { prefix: "/stats" });
+  app.register(workoutPlanRoutes);
 
 try {
   await app.listen({
