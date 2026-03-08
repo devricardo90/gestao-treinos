@@ -24,6 +24,8 @@ import {
   UpdateWorkoutSessionResponseSchema,
   GetWorkoutDayParamsSchema,
   GetWorkoutDayResponseSchema,
+  ListWorkoutPlansQuerySchema,
+  ListWorkoutPlansResponseSchema,
 } from "../shemas/index.js";
 import {
   CreateWorkoutPlan,
@@ -33,6 +35,7 @@ import { GetWorkoutPlanDetails } from "../usercases/GetWorkoutPlanDetails.js";
 import { StartWorkoutSession } from "../usercases/StartWorkoutSession.js";
 import { UpdateWorkoutSession } from "../usercases/UpdateWorkoutSession.js";
 import { GetWorkoutDayDetails } from "../usercases/GetWorkoutDayDetails.js";
+import { ListWorkoutPlans } from "../usercases/ListWorkoutPlans.js";
 
 export const workoutPlanRoutes = async (app: FastifyInstance) => {
   app.withTypeProvider<ZodTypeProvider>().route({
@@ -327,6 +330,50 @@ export const workoutPlanRoutes = async (app: FastifyInstance) => {
           });
         }
 
+        app.log.error(error);
+        return reply.status(500).send({
+          error: "Erro interno do servidor",
+          code: "INTERNAL_SERVER_ERROR",
+        });
+      }
+    },
+  });
+
+  app.withTypeProvider<ZodTypeProvider>().route({
+    method: "GET",
+    url: "/workout-plans",
+    schema: {
+      summary: "Listar planos de treino",
+      tags: ["Planos de Treino"],
+      querystring: ListWorkoutPlansQuerySchema,
+      response: {
+        200: ListWorkoutPlansResponseSchema,
+        401: ErrorSchema,
+        500: ErrorSchema,
+      },
+    },
+    handler: async (request, reply) => {
+      const session = await auth.api.getSession({
+        headers: fromNodeHeaders(request.headers),
+      });
+
+      if (!session) {
+        return reply.status(401).send({
+          error: "Não autorizado",
+          code: "UNAUTHORIZED",
+        });
+      }
+
+      try {
+        const listWorkoutPlans = new ListWorkoutPlans();
+
+        const result = await listWorkoutPlans.execute({
+          userId: session.user.id,
+          isActive: request.query.active,
+        });
+
+        return reply.status(200).send(result);
+      } catch (error) {
         app.log.error(error);
         return reply.status(500).send({
           error: "Erro interno do servidor",

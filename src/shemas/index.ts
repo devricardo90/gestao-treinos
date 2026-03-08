@@ -212,3 +212,41 @@ export const UserTrainDataResponseSchema = z.object({
   age: z.number(),
   bodyFatPercentage: z.number(),
 });
+
+export const ListWorkoutPlansQuerySchema = z.object({
+  active: z
+    .preprocess((val) => {
+      if (val === "true") return true;
+      if (val === "false") return false;
+      return val;
+    }, z.boolean())
+    .optional(),
+});
+
+export const ListWorkoutPlansResponseSchema = z.array(
+  z.object({
+    id: z.string().uuid(),
+    name: z.string(),
+    isActive: z.boolean(),
+    workoutDays: z.array(
+      z.object({
+        id: z.string().uuid(),
+        name: z.string(),
+        weekDay: z.nativeEnum(Weekday),
+        isRest: z.boolean(),
+        coverImageUrl: z.string().url().optional().nullable(),
+        estimatedDurationInSeconds: z.number(),
+        workoutExercises: z.array(
+          z.object({
+            id: z.string().uuid(),
+            name: z.string(),
+            order: z.number(),
+            sets: z.number(),
+            reps: z.number(),
+            restTimeInSeconds: z.number(),
+          }),
+        ),
+      }),
+    ),
+  }),
+);
