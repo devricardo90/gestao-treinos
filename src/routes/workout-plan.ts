@@ -20,6 +20,8 @@ import {
   UpdateWorkoutSessionBodySchema,
   UpdateWorkoutSessionParamsSchema,
   UpdateWorkoutSessionResponseSchema,
+  GetWorkoutPlanParamsSchema,
+  GetWorkoutPlanResponseSchema,
 } from "../shemas/index.js";
 import {
   CreateWorkoutPlan,
@@ -27,6 +29,7 @@ import {
 } from "../usercases/CreateWorkoutPlan.js";
 import { StartWorkoutSession } from "../usercases/StartWorkoutSession.js";
 import { UpdateWorkoutSession } from "../usercases/UpdateWorkoutSession.js";
+import { GetWorkoutPlanDetails } from "../usercases/GetWorkoutPlanDetails.js";
 
 export const workoutPlanRoutes = async (app: FastifyInstance) => {
   app.withTypeProvider<ZodTypeProvider>().route({
@@ -193,6 +196,63 @@ export const workoutPlanRoutes = async (app: FastifyInstance) => {
           startedAt: result.startedAt.toISOString(),
           completedAt: result.completedAt.toISOString(),
         });
+      } catch (error) {
+        if (error instanceof NotFoundError) {
+          return reply
+            .status(404)
+            .send({ error: error.message, code: "NOT_FOUND" });
+        }
+        if (error instanceof UnauthorizedError) {
+          return reply.status(401).send({
+            error: error.message,
+            code: "UNAUTHORIZED",
+          });
+        }
+
+        app.log.error(error);
+        return reply.status(500).send({
+          error: "Erro interno do servidor",
+          code: "INTERNAL_SERVER_ERROR",
+        });
+      }
+    },
+  });
+
+  app.withTypeProvider<ZodTypeProvider>().route({
+    method: "GET",
+    url: "/workout-plans/:id",
+    schema: {
+      summary: "Obter detalhes de um plano de treino",
+      tags: ["Planos de Treino"],
+      params: GetWorkoutPlanParamsSchema,
+      response: {
+        200: GetWorkoutPlanResponseSchema,
+        401: ErrorSchema,
+        404: ErrorSchema,
+        500: ErrorSchema,
+      },
+    },
+    handler: async (request, reply) => {
+      const session = await auth.api.getSession({
+        headers: fromNodeHeaders(request.headers),
+      });
+
+      if (!session) {
+        return reply.status(401).send({
+          error: "Não autorizado",
+          code: "UNAUTHORIZED",
+        });
+      }
+
+      try {
+        const getWorkoutPlanDetails = new GetWorkoutPlanDetails();
+
+        const result = await getWorkoutPlanDetails.execute({
+          userId: session.user.id,
+          workoutPlanId: request.params.id,
+        });
+
+        return reply.status(200).send(result);
       } catch (error) {
         if (error instanceof NotFoundError) {
           return reply
