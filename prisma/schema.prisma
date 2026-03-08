@@ -23,26 +23,16 @@ model User {
   createdAt     DateTime @default(now()) @map("created_at")
   updatedAt     DateTime @updatedAt @map("updated_at")
 
-  sessions        Session[]
-  accounts        Account[]
-  workoutPlans    WorkoutPlan[]
-  workoutSessions WorkoutSession[]
-  trainData      UserTrainData?
+  sessions            Session[]
+  accounts            Account[]
+  workoutPlans        WorkoutPlan[]
+  workoutSessions     WorkoutSession[]
+  weightInGrams       Int?             @map("weight_in_grams")
+  heightInCentimeters Int?             @map("height_in_centimeters")
+  age                 Int?
+  bodyFatPercentage   Int?             @map("body_fat_percentage") // 100 representa 100%
 
   @@map("users")
-}
-
-model UserTrainData {
-  userId              String   @id @map("user_id")
-  user                User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  weightInGrams       Int      @map("weight_in_grams")
-  heightInCentimeters Int      @map("height_in_centimeters")
-  age                 Int
-  bodyFatPercentage   Float    @map("body_fat_percentage")
-  createdAt           DateTime @default(now()) @map("created_at") @db.Timestamptz()
-  updatedAt           DateTime @updatedAt @map("updated_at") @db.Timestamptz()
-
-  @@map("user_train_data")
 }
 
 model Session {
