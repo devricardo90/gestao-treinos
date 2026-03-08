@@ -119,7 +119,7 @@ export const GetHomeResponseSchema = z.object({
     .nullable(),
   workoutStreak: z.number(),
   consistencyByDay: z.record(
-    z.string(),
+    z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Data deve estar no formato YYYY-MM-DD"),
     z.object({
       workoutDayCompleted: z.boolean(),
       workoutDayStarted: z.boolean(),
@@ -186,7 +186,7 @@ export const GetStatsQuerySchema = z.object({
 export const GetStatsResponseSchema = z.object({
   workoutStreak: z.number(),
   consistencyByDay: z.record(
-    z.string(),
+    z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Data deve estar no formato YYYY-MM-DD"),
     z.object({
       workoutDayCompleted: z.boolean(),
       workoutDayStarted: z.boolean(),
@@ -195,4 +195,20 @@ export const GetStatsResponseSchema = z.object({
   completedWorkoutsCount: z.number(),
   conclusionRate: z.number(),
   totalTimeInSeconds: z.number(),
+});
+
+export const UpsertUserTrainDataBodySchema = z.object({
+  weightInGrams: z.number().int().positive(),
+  heightInCentimeters: z.number().int().positive(),
+  age: z.number().int().positive(),
+  bodyFatPercentage: z.number().min(0).max(1),
+});
+
+export const UserTrainDataResponseSchema = z.object({
+  userId: z.string(),
+  userName: z.string(),
+  weightInGrams: z.number(),
+  heightInCentimeters: z.number(),
+  age: z.number(),
+  bodyFatPercentage: z.number(),
 });
