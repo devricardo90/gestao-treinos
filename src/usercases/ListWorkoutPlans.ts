@@ -1,5 +1,5 @@
-import { prisma } from "../lib/db.js";
 import { Weekday } from "../generated/prisma/enums.js";
+import { prisma } from "../lib/db.js";
 
 export interface ListWorkoutPlansInputDto {
   userId: string;
@@ -29,7 +29,9 @@ export interface ListWorkoutPlansOutputDto {
 }
 
 export class ListWorkoutPlans {
-  async execute(dto: ListWorkoutPlansInputDto): Promise<ListWorkoutPlansOutputDto[]> {
+  async execute(
+    dto: ListWorkoutPlansInputDto,
+  ): Promise<ListWorkoutPlansOutputDto[]> {
     const workoutPlans = await prisma.workoutPlan.findMany({
       where: {
         userId: dto.userId,

@@ -14,6 +14,7 @@ import { z } from "zod";
 
 import { auth } from "./lib/auth.js";
 import { prisma } from "./lib/prisma.js";
+import { aiRoutes } from "./routes/ai.js";
 import { homeRoutes } from "./routes/home.js";
 import { statsRoutes } from "./routes/stats.js";
 import { userRoutes } from "./routes/user.js";
@@ -173,6 +174,7 @@ app.withTypeProvider<ZodTypeProvider>().route({
 });
 
   app.register(homeRoutes);
+  app.register(aiRoutes);
   app.register(statsRoutes, { prefix: "/stats" });
   app.register(userRoutes);
   app.register(workoutPlanRoutes);

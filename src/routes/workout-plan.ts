@@ -15,27 +15,27 @@ import {
   ErrorSchema,
 } from "../shemas/index.js";
 import {
+  GetWorkoutDayParamsSchema,
+  GetWorkoutDayResponseSchema,
   GetWorkoutPlanParamsSchema,
   GetWorkoutPlanResponseSchema,
+  ListWorkoutPlansQuerySchema,
+  ListWorkoutPlansResponseSchema,
   StartWorkoutSessionParamsSchema,
   StartWorkoutSessionResponseSchema,
   UpdateWorkoutSessionBodySchema,
   UpdateWorkoutSessionParamsSchema,
   UpdateWorkoutSessionResponseSchema,
-  GetWorkoutDayParamsSchema,
-  GetWorkoutDayResponseSchema,
-  ListWorkoutPlansQuerySchema,
-  ListWorkoutPlansResponseSchema,
 } from "../shemas/index.js";
 import {
   CreateWorkoutPlan,
   CreateWorkoutPlanInputDto,
 } from "../usercases/CreateWorkoutPlan.js";
+import { GetWorkoutDayDetails } from "../usercases/GetWorkoutDayDetails.js";
 import { GetWorkoutPlanDetails } from "../usercases/GetWorkoutPlanDetails.js";
+import { ListWorkoutPlans } from "../usercases/ListWorkoutPlans.js";
 import { StartWorkoutSession } from "../usercases/StartWorkoutSession.js";
 import { UpdateWorkoutSession } from "../usercases/UpdateWorkoutSession.js";
-import { GetWorkoutDayDetails } from "../usercases/GetWorkoutDayDetails.js";
-import { ListWorkoutPlans } from "../usercases/ListWorkoutPlans.js";
 
 export const workoutPlanRoutes = async (app: FastifyInstance) => {
   app.withTypeProvider<ZodTypeProvider>().route({
