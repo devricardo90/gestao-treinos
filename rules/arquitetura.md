@@ -27,6 +27,7 @@ A API segue um fluxo estrito: `Routes -> Use Cases -> Prisma`.
 - Centralizam validações do Zod.
 - Reutilizáveis entre rotas e OpenAPI docs.
 - Devem conter toda a tipagem de Input e Output.
+- **SEMPRE** utilize `z.nativeEnum(EnumDoPrisma)` para campos que possuem Enums definidos no `schema.prisma`, garantindo uma única fonte de verdade.
 
 ### 4. Errors (`src/errors/`)
 

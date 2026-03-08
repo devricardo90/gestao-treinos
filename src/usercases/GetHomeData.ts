@@ -1,5 +1,6 @@
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc.js";
+import { Weekday } from "../generated/prisma/enums.js";
 import { prisma } from "../lib/db.js";
 
 dayjs.extend(utc);
@@ -16,7 +17,7 @@ export interface GetHomeDataOutputDto {
     id: string;
     name: string;
     isRest: boolean;
-    weekDay: string;
+    weekDay: Weekday;
     estimatedDurationInSeconds: number;
     coverImageUrl?: string | null;
     exercisesCount: number;

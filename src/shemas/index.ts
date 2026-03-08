@@ -39,7 +39,7 @@ export const WorkoutDayInputSchema = z.object({
   name: z.string().trim().min(1),
   coverImageUrl: z.string().url().optional(),
   isRest: z.boolean().default(false),
-  weekday: z.enum(Weekday),
+  weekday: z.nativeEnum(Weekday),
   estimatedDurationInSeconds: z.number().min(1),
   exercises: z.array(WorkoutExerciseInputSchema),
 });
@@ -62,7 +62,7 @@ export const WorkoutDayResponseSchema = z.object({
   id: z.string(),
   name: z.string().trim().min(1),
   coverImageUrl: z.string().url().nullable().optional(),
-  weekday: z.enum(Weekday),
+  weekday: z.nativeEnum(Weekday),
   isRest: z.boolean(),
   estimatedDurationInSeconds: z.number().int().min(1),
   workoutExercises: z.array(WorkoutExerciseResponseSchema),
@@ -111,7 +111,7 @@ export const GetHomeResponseSchema = z.object({
       id: z.string().uuid(),
       name: z.string(),
       isRest: z.boolean(),
-      weekDay: z.string(),
+      weekDay: z.nativeEnum(Weekday),
       estimatedDurationInSeconds: z.number(),
       coverImageUrl: z.string().url().optional().nullable(),
       exercisesCount: z.number(),
@@ -137,7 +137,7 @@ export const GetWorkoutPlanResponseSchema = z.object({
   workoutDays: z.array(
     z.object({
       id: z.string().uuid(),
-      weekDay: z.string(),
+      weekDay: z.nativeEnum(Weekday),
       name: z.string(),
       isRest: z.boolean(),
       coverImageUrl: z.string().url().optional().nullable(),

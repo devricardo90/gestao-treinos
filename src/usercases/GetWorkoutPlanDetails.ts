@@ -1,3 +1,4 @@
+import { Weekday } from "../generated/prisma/enums.js";
 import { NotFoundError, UnauthorizedError } from "../errors/index.js";
 import { prisma } from "../lib/db.js";
 
@@ -11,7 +12,7 @@ export interface GetWorkoutPlanDetailsOutputDto {
   name: string;
   workoutDays: Array<{
     id: string;
-    weekDay: string;
+    weekDay: Weekday;
     name: string;
     isRest: boolean;
     coverImageUrl?: string | null;
