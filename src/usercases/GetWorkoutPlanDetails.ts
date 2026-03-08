@@ -1,5 +1,5 @@
-import { Weekday } from "../generated/prisma/enums.js";
 import { NotFoundError, UnauthorizedError } from "../errors/index.js";
+import { Weekday } from "../generated/prisma/enums.js";
 import { prisma } from "../lib/db.js";
 
 export interface GetWorkoutPlanDetailsInputDto {
