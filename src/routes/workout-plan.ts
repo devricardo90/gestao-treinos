@@ -21,12 +21,12 @@ import {
   UpdateWorkoutSessionParamsSchema,
   UpdateWorkoutSessionResponseSchema,
 } from "../shemas/index.js";
-import { UpdateWorkoutSession } from "../usercases/UpdateWorkoutSession.js";
 import {
   CreateWorkoutPlan,
   CreateWorkoutPlanInputDto,
 } from "../usercases/CreateWorkoutPlan.js";
 import { StartWorkoutSession } from "../usercases/StartWorkoutSession.js";
+import { UpdateWorkoutSession } from "../usercases/UpdateWorkoutSession.js";
 
 export const workoutPlanRoutes = async (app: FastifyInstance) => {
   app.withTypeProvider<ZodTypeProvider>().route({

@@ -12,7 +12,9 @@ import {
 } from "fastify-type-provider-zod";
 import { z } from "zod";
 
+import { auth } from "./lib/auth.js";
 import { prisma } from "./lib/prisma.js";
+import { homeRoutes } from "./routes/home.js";
 import { workoutPlanRoutes } from "./routes/workout-plan.js";
 
 export const app = Fastify({ logger: true });
@@ -168,6 +170,7 @@ app.withTypeProvider<ZodTypeProvider>().route({
   },
 });
 
+await app.register(homeRoutes);
 await app.register(workoutPlanRoutes);
 
 try {
