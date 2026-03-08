@@ -9,7 +9,7 @@ globs: "**/*"
 
 - Priorize **Performance** sobre elegância. Código eficiente vem primeiro.
 - Respostas para o desenvolvedor: **SEMPRE em Português do Brasil**.
-- Os Commits do projeto **DEVEM** ser em Inglês.
+- Os Commits do projeto **DEVEM** ser em Inglês e seguir o padrão **Conventional Commits** (ex: feat:, fix:, docs:, chore:).
 
 ## Stack e Ferramentas Fixas
 

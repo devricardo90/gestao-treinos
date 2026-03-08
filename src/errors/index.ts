@@ -25,3 +25,17 @@ export class BadRequestError extends Error {
     this.name = "BadRequestError";
   }
 }
+
+export class WorkoutPlanNotActiveError extends Error {
+  constructor(message: string = "Plano de treino não está ativo") {
+    super(message);
+    this.name = "WorkoutPlanNotActiveError";
+  }
+}
+
+export class ConflictError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "ConflictError";
+  }
+}

@@ -6,6 +6,7 @@ export interface CreateWorkoutPlanInputDto {
   userId: string;
   workoutDays: Array<{
     name: string;
+    coverImageUrl?: string;
     weekday: Weekday;
     isRest: boolean;
     estimatedDurationInSeconds: number;
@@ -25,6 +26,7 @@ export interface CreateWorkoutPlanOutputDto {
   workoutDays: Array<{
     id: string;
     name: string;
+    coverImageUrl: string | null;
     weekday: Weekday;
     isRest: boolean;
     estimatedDurationInSeconds: number;
@@ -68,6 +70,7 @@ export class CreateWorkoutPlan {
           workoutDays: {
             create: dto.workoutDays.map((workoutDay) => ({
               name: workoutDay.name,
+              coverImageUrl: workoutDay.coverImageUrl,
               weekday: workoutDay.weekday,
               isRest: workoutDay.isRest,
               estimatedDurationInSeconds: workoutDay.estimatedDurationInSeconds,
@@ -106,6 +109,7 @@ export class CreateWorkoutPlan {
         workoutDays: result.workoutDays.map((day) => ({
           id: day.id,
           name: day.name,
+          coverImageUrl: day.coverImageUrl,
           weekday: Object.values(Weekday).find(
             (w) => w === day.weekday,
           ) as Weekday,

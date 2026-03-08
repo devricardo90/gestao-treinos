@@ -13,7 +13,7 @@ import {
 import { z } from "zod";
 
 import { prisma } from "./lib/prisma.js";
-import { workoutPlanRoutes } from "./router/workout-plan.js";
+import { workoutPlanRoutes } from "./routes/workout-plan.js";
 
 export const app = Fastify({ logger: true });
 
