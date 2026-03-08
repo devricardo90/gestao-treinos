@@ -15,6 +15,9 @@ import { Weekday } from "../generated/prisma/enums.js";
 import { auth } from "../lib/auth.js";
 import { ErrorSchema } from "../shemas/index.js";
 import { CreateWorkoutPlan } from "../usercases/CreateWorkoutPlan.js";
+import { GetUserTrainData } from "../usercases/GetUserTrainData.js";
+import { ListWorkoutPlans } from "../usercases/ListWorkoutPlans.js";
+import { UpsertUserTrainData } from "../usercases/UpsertUserTrainData.js";
 
 export const aiRoutes = async (app: FastifyInstance) => {
   app.withTypeProvider<ZodTypeProvider>().route({
@@ -50,8 +53,47 @@ export const aiRoutes = async (app: FastifyInstance) => {
         const result = streamText({
           model: openai("gpt-4o-mini"),
           system:
-            "Você é um assistente pessoal de treinos. Ajude o usuário com dúvidas sobre exercícios, nutrição e organização de treinos. Você pode criar planos de treino completos se o usuário pedir usando a ferramenta 'createWorkoutPlan'.",
+            "Você é um assistente pessoal de treinos. Você pode: 1. Ajudar com dúvidas sobre exercícios e nutrição. 2. Criar planos de treino. 3. Consultar e atualizar os dados físicos do usuário (peso, altura, idade, bf%). 4. Listar os planos de treino atuais. Use as ferramentas sempre que necessário para dar respostas precisas baseadas nos dados do usuário.",
           tools: {
+            getUserTrainData: tool({
+              description: "Recupera os dados físicos do usuário (peso, altura, idade, bf%).",
+              inputSchema: z.object({}),
+              execute: async () => {
+                const getUserTrainData = new GetUserTrainData();
+                return await getUserTrainData.execute({
+                  userId: session.user.id,
+                });
+              },
+            }),
+            updateUserTrainData: tool({
+              description: "Atualiza ou cria os dados físicos do usuário.",
+              inputSchema: z.object({
+                weightInGrams: z.number().describe("Peso em gramas"),
+                heightInCentimeters: z.number().describe("Altura em centímetros"),
+                age: z.number().describe("Idade em anos"),
+                bodyFatPercentage: z.number().describe("Percentual de gordura corporal"),
+              }),
+              execute: async (args) => {
+                const upsertUserTrainData = new UpsertUserTrainData();
+                return await upsertUserTrainData.execute({
+                  userId: session.user.id,
+                  ...args,
+                });
+              },
+            }),
+            getWorkoutPlans: tool({
+              description: "Lista os planos de treino do usuário.",
+              inputSchema: z.object({
+                active: z.boolean().optional().describe("Filtrar apenas por planos ativos"),
+              }),
+              execute: async (args) => {
+                const listWorkoutPlans = new ListWorkoutPlans();
+                return await listWorkoutPlans.execute({
+                  userId: session.user.id,
+                  isActive: args.active,
+                });
+              },
+            }),
             createWorkoutPlan: tool({
               description:
                 "Cria um novo plano de treino completo para o usuário.",
@@ -116,7 +158,7 @@ export const aiRoutes = async (app: FastifyInstance) => {
 
         const response = result.toUIMessageStreamResponse();
 
-        reply.status(response.status);
+        reply.status(response.status as 200 | 401 | 500);
 
         response.headers.forEach((value, key) => reply.header(key, value));
 
