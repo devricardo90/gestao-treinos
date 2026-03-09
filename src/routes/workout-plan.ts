@@ -42,7 +42,8 @@ export const workoutPlanRoutes = async (app: FastifyInstance) => {
     method: "POST",
     url: "/workout-plans",
     schema: {
-      summary: "Criar um novo plano de treino",
+      operationId: "listWorkoutPlans",
+      summary: "Listar planos de treino",
       tags: ["Planos de Treino"],
       body: CreateWorkoutPlanBodySchema,
       response: {
@@ -91,6 +92,7 @@ export const workoutPlanRoutes = async (app: FastifyInstance) => {
     method: "POST",
     url: "/workout-plans/:workoutPlanId/days/:workoutDayId/sessions",
     schema: {
+      operationId: "startWorkoutSession",
       summary: "Iniciar uma sessão de treino",
       tags: ["Sessões de Treino"],
       params: StartWorkoutSessionParamsSchema,
@@ -162,6 +164,7 @@ export const workoutPlanRoutes = async (app: FastifyInstance) => {
     method: "PATCH",
     url: "/workout-plans/:workoutPlanId/days/:workoutDayId/sessions/:sessionId",
     schema: {
+      operationId: "updateWorkoutSession",
       summary: "Finalizar uma sessão de treino",
       tags: ["Sessões de Treino"],
       params: UpdateWorkoutSessionParamsSchema,
@@ -285,6 +288,7 @@ export const workoutPlanRoutes = async (app: FastifyInstance) => {
     method: "GET",
     url: "/workout-plans/:id/days/:dayId",
     schema: {
+      operationId: "getWorkoutDayDetails",
       summary: "Obter detalhes de um dia de treino",
       tags: ["Planos de Treino"],
       params: GetWorkoutDayParamsSchema,
@@ -343,6 +347,7 @@ export const workoutPlanRoutes = async (app: FastifyInstance) => {
     method: "GET",
     url: "/workout-plans",
     schema: {
+      operationId: "listWorkoutPlans",
       summary: "Listar planos de treino",
       tags: ["Planos de Treino"],
       querystring: ListWorkoutPlansQuerySchema,
