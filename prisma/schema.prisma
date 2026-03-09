@@ -1,16 +1,15 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
 
 generator client {
-  provider = "prisma-client"
-  output   = "../src/generated/prisma"
+  provider               = "prisma-client"
+  output                 = "../src/generated/prisma"
+  moduleFormat           = "esm"
+  generatedFileExtension = "ts"
+  importFileExtension    = "ts"
 }
 
 datasource db {
   provider = "postgresql"
+  
 }
 
 model User {
@@ -27,10 +26,10 @@ model User {
   accounts            Account[]
   workoutPlans        WorkoutPlan[]
   workoutSessions     WorkoutSession[]
-  weightInGrams       Int?             @map("weight_in_grams")
-  heightInCentimeters Int?             @map("height_in_centimeters")
+  weightInGrams       Int? @map("weight_in_grams")
+  heightInCentimeters Int? @map("height_in_centimeters")
   age                 Int?
-  bodyFatPercentage   Int?             @map("body_fat_percentage") // 100 representa 100%
+  bodyFatPercentage   Int? @map("body_fat_percentage")
 
   @@map("users")
 }

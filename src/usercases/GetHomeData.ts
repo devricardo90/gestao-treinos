@@ -1,5 +1,6 @@
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc.js";
+
 import { Weekday } from "../generated/prisma/enums.js";
 import { prisma } from "../lib/db.js";
 
@@ -87,7 +88,10 @@ export class GetHomeData {
     });
 
     const consistencyByDay: {
-      [key: string]: { workoutDayCompleted: boolean; workoutDayStarted: boolean };
+      [key: string]: {
+        workoutDayCompleted: boolean;
+        workoutDayStarted: boolean;
+      };
     } = {};
 
     for (let i = 0; i < 7; i++) {
@@ -121,18 +125,29 @@ export class GetHomeData {
 
     let streak = 0;
     if (completedSessions.length > 0) {
-      const currentStreakDate = dayjs.utc(completedSessions[0].startedAt).startOf("day");
-      
+      const currentStreakDate = dayjs
+        .utc(completedSessions[0].startedAt)
+        .startOf("day");
+
       // If the last completed session was today or yesterday, start counting
       const today = dayjs.utc().startOf("day");
-      if (currentStreakDate.isSame(today) || currentStreakDate.isSame(today.subtract(1, "day"))) {
+      if (
+        currentStreakDate.isSame(today) ||
+        currentStreakDate.isSame(today.subtract(1, "day"))
+      ) {
         streak = 1;
-        const uniqueDates = Array.from(new Set(completedSessions.map(s => dayjs.utc(s.startedAt).startOf("day").valueOf())));
-        
+        const uniqueDates = Array.from(
+          new Set(
+            completedSessions.map((s) =>
+              dayjs.utc(s.startedAt).startOf("day").valueOf(),
+            ),
+          ),
+        );
+
         for (let i = 0; i < uniqueDates.length - 1; i++) {
-          const prevDate = dayjs.utc(uniqueDates[i+1]);
+          const prevDate = dayjs.utc(uniqueDates[i + 1]);
           const currDate = dayjs.utc(uniqueDates[i]);
-          
+
           if (currDate.subtract(1, "day").isSame(prevDate)) {
             streak++;
           } else {

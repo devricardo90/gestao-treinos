@@ -1,5 +1,4 @@
 {
-  // Visit https://aka.ms/tsconfig to read more about this file
   "compilerOptions": {
     "module": "nodenext",
     "moduleResolution": "nodenext",
@@ -7,8 +6,7 @@
     "skipLibCheck": true,
     "strict": true,
     "outDir": "./dist",
+    "rewriteRelativeImportExtensions": true
   },
-  "include": [
-    "src/**/*"
-  ],
+  "include": ["src/**/*"]
 }

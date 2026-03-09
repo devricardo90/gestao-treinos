@@ -173,11 +173,11 @@ app.withTypeProvider<ZodTypeProvider>().route({
   },
 });
 
-  app.register(homeRoutes);
-  app.register(aiRoutes);
-  app.register(statsRoutes, { prefix: "/stats" });
-  app.register(userRoutes);
-  app.register(workoutPlanRoutes);
+app.register(homeRoutes);
+app.register(aiRoutes);
+app.register(statsRoutes, { prefix: "/stats" });
+app.register(userRoutes);
+app.register(workoutPlanRoutes);
 
 try {
   await app.listen({
