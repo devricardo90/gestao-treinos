@@ -24,7 +24,8 @@ export const app = Fastify({ logger: true });
 
 // Register CORS
 await app.register(fastifyCors, {
-  origin: "*",
+  origin: "http://localhost:3000",
+  credentials: true,
 });
 
 app.setValidatorCompiler(validatorCompiler);
