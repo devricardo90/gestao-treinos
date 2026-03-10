@@ -1,4 +1,4 @@
-import { openai } from "@ai-sdk/openai";
+import { google } from "@ai-sdk/google";
 import {
   convertToModelMessages,
   stepCountIs,
@@ -51,7 +51,7 @@ export const aiRoutes = async (app: FastifyInstance) => {
         const { messages } = request.body as { messages: UIMessage[] };
 
         const result = streamText({
-          model: openai("gpt-4o-mini"),
+          model: google("gemini-2.5-flash"),
           system: `Você é um personal trainer virtual especialista em montagem de planos de treino.
 Seu tom é amigável, motivador e você usa linguagem simples, sem jargões técnicos.
 
@@ -131,7 +131,9 @@ Respostas curtas e objetivas sempre.`,
                     weekday: z.nativeEnum(Weekday).describe("Dia da semana"),
                     isRest: z
                       .boolean()
-                      .describe("Se é dia de descanso (true) ou treino (false)"),
+                      .describe(
+                        "Se é dia de descanso (true) ou treino (false)",
+                      ),
                     estimatedDurationInSeconds: z
                       .number()
                       .describe(
