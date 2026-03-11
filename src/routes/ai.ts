@@ -6,18 +6,16 @@ import {
   tool,
   UIMessage,
 } from "ai";
-import { fromNodeHeaders } from "better-auth/node";
 import { FastifyInstance } from "fastify";
 import { ZodTypeProvider } from "fastify-type-provider-zod";
 import { z } from "zod";
 
 import { Weekday } from "../generated/prisma/enums.js";
-import { auth } from "../lib/auth.js";
-import { ErrorSchema } from "../shemas/index.js";
-import { CreateWorkoutPlan } from "../usercases/CreateWorkoutPlan.js";
-import { GetUserTrainData } from "../usercases/GetUserTrainData.js";
-import { ListWorkoutPlans } from "../usercases/ListWorkoutPlans.js";
-import { UpsertUserTrainData } from "../usercases/UpsertUserTrainData.js";
+import { ErrorSchema } from "../schemas/index.js";
+import { CreateWorkoutPlan } from "../usecases/CreateWorkoutPlan.js";
+import { GetUserTrainData } from "../usecases/GetUserTrainData.js";
+import { ListWorkoutPlans } from "../usecases/ListWorkoutPlans.js";
+import { UpsertUserTrainData } from "../usecases/UpsertUserTrainData.js";
 
 export const aiRoutes = async (app: FastifyInstance) => {
   app.withTypeProvider<ZodTypeProvider>().route({
@@ -32,21 +30,18 @@ export const aiRoutes = async (app: FastifyInstance) => {
       response: {
         200: z.any(),
         401: ErrorSchema,
+        429: ErrorSchema,
         500: ErrorSchema,
       },
     },
+    // Rate limit específico da IA: 10 req/min por usuário
+    config: {
+      rateLimit: {
+        max: 10,
+        timeWindow: "1 minute",
+      },
+    },
     handler: async (request, reply) => {
-      const session = await auth.api.getSession({
-        headers: fromNodeHeaders(request.headers),
-      });
-
-      if (!session) {
-        return reply.status(401).send({
-          error: "Não autorizado",
-          code: "UNAUTHORIZED",
-        });
-      }
-
       try {
         const { messages } = request.body as { messages: UIMessage[] };
 
@@ -83,7 +78,7 @@ Respostas curtas e objetivas sempre.`,
               execute: async () => {
                 const getUserTrainData = new GetUserTrainData();
                 return await getUserTrainData.execute({
-                  userId: session.user.id,
+                  userId: request.session.user.id,
                 });
               },
             }),
@@ -103,7 +98,7 @@ Respostas curtas e objetivas sempre.`,
               execute: async (args) => {
                 const upsertUserTrainData = new UpsertUserTrainData();
                 return await upsertUserTrainData.execute({
-                  userId: session.user.id,
+                  userId: request.session.user.id,
                   ...args,
                 });
               },
@@ -114,7 +109,7 @@ Respostas curtas e objetivas sempre.`,
               execute: async () => {
                 const listWorkoutPlans = new ListWorkoutPlans();
                 return await listWorkoutPlans.execute({
-                  userId: session.user.id,
+                  userId: request.session.user.id,
                 });
               },
             }),
@@ -165,19 +160,25 @@ Respostas curtas e objetivas sempre.`,
                   }),
                 ),
               }),
-              execute: async (args: any) => {
+              execute: async (args: Pick<import("../usecases/CreateWorkoutPlan.js").CreateWorkoutPlanInputDto, "name" | "workoutDays">) => {
                 const createWorkoutPlan = new CreateWorkoutPlan();
                 return await createWorkoutPlan.execute({
-                  userId: session.user.id,
+                  userId: request.session.user.id,
                   name: args.name,
                   workoutDays: args.workoutDays,
                 });
               },
             }),
           },
-          stopWhen: stepCountIs(5),
+          stopWhen: stepCountIs(10),
           messages: await convertToModelMessages(messages),
         });
+
+        // Verifica se o limite de steps foi atingido sem concluir
+        const finalSteps = await result.steps;
+        if (finalSteps.length >= 10) {
+          app.log.warn({ userId: request.session.user.id }, "AI step limit reached");
+        }
 
         const response = result.toUIMessageStreamResponse();
 

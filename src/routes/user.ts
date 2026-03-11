@@ -1,16 +1,14 @@
-import { fromNodeHeaders } from "better-auth/node";
 import { FastifyInstance } from "fastify";
 import { ZodTypeProvider } from "fastify-type-provider-zod";
+import { z } from "zod";
 
-import { auth } from "../lib/auth.js";
 import {
   ErrorSchema,
   UpsertUserTrainDataBodySchema,
   UserTrainDataResponseSchema,
-} from "../shemas/index.js";
-import { GetUserTrainData } from "../usercases/GetUserTrainData.js";
-import { UpsertUserTrainData } from "../usercases/UpsertUserTrainData.js";
-import { z } from "zod";
+} from "../schemas/index.js";
+import { GetUserTrainData } from "../usecases/GetUserTrainData.js";
+import { UpsertUserTrainData } from "../usecases/UpsertUserTrainData.js";
 
 export const userRoutes = async (app: FastifyInstance) => {
   app.withTypeProvider<ZodTypeProvider>().route({
@@ -26,21 +24,10 @@ export const userRoutes = async (app: FastifyInstance) => {
       },
     },
     handler: async (request, reply) => {
-      const session = await auth.api.getSession({
-        headers: fromNodeHeaders(request.headers),
-      });
-
-      if (!session) {
-        return reply.status(401).send({
-          error: "Não autorizado",
-          code: "UNAUTHORIZED",
-        });
-      }
-
       try {
         const getUserTrainData = new GetUserTrainData();
         const result = await getUserTrainData.execute({
-          userId: session.user.id,
+          userId: request.session.user.id,
         });
 
         return reply.status(200).send(result);
@@ -74,21 +61,10 @@ export const userRoutes = async (app: FastifyInstance) => {
       },
     },
     handler: async (request, reply) => {
-      const session = await auth.api.getSession({
-        headers: fromNodeHeaders(request.headers),
-      });
-
-      if (!session) {
-        return reply.status(401).send({
-          error: "Não autorizado",
-          code: "UNAUTHORIZED",
-        });
-      }
-
       try {
         const upsertUserTrainData = new UpsertUserTrainData();
         const result = await upsertUserTrainData.execute({
-          userId: session.user.id,
+          userId: request.session.user.id,
           ...request.body,
         });
 

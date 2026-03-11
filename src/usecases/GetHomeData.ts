@@ -47,7 +47,8 @@ export class GetHomeData {
       include: {
         workoutDays: {
           include: {
-            workoutExercises: true,
+            // Apenas a contagem — não precisamos dos campos de cada exercício aqui
+            _count: { select: { workoutExercises: true } },
           },
         },
       },
@@ -69,8 +70,8 @@ export class GetHomeData {
           isRest: dayMatch.isRest,
           weekDay: dayMatch.weekday,
           estimatedDurationInSeconds: dayMatch.estimatedDurationInSeconds,
-          coverImageUrl: dayMatch.coverImageUrl, // Cover image is on WorkoutDay
-          exercisesCount: dayMatch.workoutExercises.length,
+          coverImageUrl: dayMatch.coverImageUrl,
+          exercisesCount: dayMatch._count.workoutExercises,
         };
       }
     }
@@ -112,12 +113,13 @@ export class GetHomeData {
       }
     });
 
-    // 4. Workout Streak (Simplified)
-    // We look at all completed sessions for this user, ordered by date
+    // 4. Workout Streak — limitado a 60 dias para evitar scan ilimitado
+    const sixtyDaysAgo = targetDate.subtract(60, "day").toDate();
     const completedSessions = await prisma.workoutSession.findMany({
       where: {
         userId: dto.userId,
         completedAt: { not: null },
+        startedAt: { gte: sixtyDaysAgo },
       },
       orderBy: { startedAt: "desc" },
       select: { startedAt: true },

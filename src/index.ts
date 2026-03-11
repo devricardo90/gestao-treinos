@@ -1,6 +1,7 @@
 import "dotenv/config";
 
 import fastifyCors from "@fastify/cors";
+import rateLimit from "@fastify/rate-limit";
 import fastifySwagger from "@fastify/swagger";
 import ScalarApiReference from "@scalar/fastify-api-reference";
 import Fastify from "fastify";
@@ -14,6 +15,8 @@ import { z } from "zod";
 
 import { auth } from "./lib/auth.js";
 import { prisma } from "./lib/prisma.js";
+import { authenticate } from "./plugins/authenticate.js";
+import { errorHandler } from "./plugins/error-handler.js";
 import { aiRoutes } from "./routes/ai.js";
 import { homeRoutes } from "./routes/home.js";
 import { statsRoutes } from "./routes/stats.js";
@@ -24,12 +27,23 @@ export const app = Fastify({ logger: true });
 
 // Register CORS
 await app.register(fastifyCors, {
-  origin: "http://localhost:3000",
+  origin: process.env.FRONTEND_URL || "http://localhost:3000",
   credentials: true,
 });
 
 app.setValidatorCompiler(validatorCompiler);
 app.setSerializerCompiler(serializerCompiler);
+
+// Error handler global — mapeia erros de domínio para HTTP status
+await app.register(errorHandler);
+
+// Rate limit global — configuração base (a rota /ai sobrescreve com limite menor)
+await app.register(rateLimit, {
+  max: 100,
+  timeWindow: "1 minute",
+  keyGenerator: (request: import("fastify").FastifyRequest & { session?: { user: { id: string } } }) =>
+    request.session?.user?.id ?? request.ip,
+});
 
 // Register authentication endpoint
 app.route({
@@ -85,28 +99,6 @@ await app.register(fastifySwagger, {
   transform: jsonSchemaTransform,
 });
 
-// Adicione isso para a rota aparecer na documentação
-app.withTypeProvider<ZodTypeProvider>().route({
-  method: "POST",
-  url: "/api/auth/sign-up/email",
-  schema: {
-    tags: ["Autenticação"],
-    description: "Criar uma nova conta",
-    body: z.object({
-      email: z.string().email(),
-      password: z.string().min(8),
-      name: z.string().min(2),
-    }),
-    response: {
-      200: z.any(),
-    },
-  },
-  handler: async (_request, _reply) => {
-    // Esse handler será "ignorado" porque a rota /api/auth/*
-    // vai capturar a requisição antes, mas o Scalar vai ler esse schema.
-  },
-});
-
 await app.register(ScalarApiReference, {
   routePrefix: "/docs",
   openApiDocumentEndpoints: {
@@ -148,40 +140,46 @@ app.withTypeProvider<ZodTypeProvider>().route({
   },
 });
 
-app.withTypeProvider<ZodTypeProvider>().route({
-  method: "GET",
-  url: "/users",
-  schema: {
-    description: "Listar todos os usuários",
-    tags: ["Usuários"],
-    response: {
-      200: z.array(
-        z.object({
+
+// Rotas PRIVADAS — protegidas pelo plugin authenticate com escopo isolado
+await app.register(async (privateApp) => {
+  privateApp.register(authenticate);
+  privateApp.register(homeRoutes);
+  privateApp.register(aiRoutes);
+  privateApp.register(statsRoutes, { prefix: "/stats" });
+  privateApp.register(userRoutes);
+  privateApp.register(workoutPlanRoutes);
+
+  // Rota de perfil básico — protegida, retorna apenas o próprio usuário
+  privateApp.withTypeProvider<ZodTypeProvider>().route({
+    method: "GET",
+    url: "/users/me",
+    schema: {
+      summary: "Obter perfil do usuário autenticado",
+      tags: ["Usuários"],
+      response: {
+        200: z.object({
           id: z.string(),
-          name: z.string(),
+          name: z.string().nullable(),
           email: z.string(),
         }),
-      ),
-    },
-  },
-  handler: async () => {
-    const users = await prisma.user.findMany({
-      select: {
-        id: true,
-        name: true,
-        email: true,
+        401: z.object({ error: z.string(), code: z.string() }),
       },
-    });
+    },
+    handler: async (request, reply) => {
+      const user = await prisma.user.findUnique({
+        where: { id: request.session.user.id },
+        select: { id: true, name: true, email: true },
+      });
 
-    return users;
-  },
+      if (!user) {
+        return reply.status(401).send({ error: "Usuário não encontrado", code: "NOT_FOUND" });
+      }
+
+      return reply.status(200).send(user);
+    },
+  });
 });
-
-app.register(homeRoutes);
-app.register(aiRoutes);
-app.register(statsRoutes, { prefix: "/stats" });
-app.register(userRoutes);
-app.register(workoutPlanRoutes);
 
 try {
   await app.listen({
