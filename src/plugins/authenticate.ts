@@ -1,4 +1,5 @@
 import { fromNodeHeaders } from "better-auth/node";
+import fp from "fastify-plugin";
 
 import { auth } from "../lib/auth.js";
 
@@ -9,25 +10,25 @@ type AuthSession = NonNullable<Awaited<ReturnType<typeof auth.api.getSession>>>;
 declare module "fastify" {
   interface FastifyRequest {
     session: AuthSession;
+    _session: AuthSession | null;
   }
 }
 
 /**
- * Plugin de autenticação com escopo.
- * Registre dentro de um app.register() isolado para proteger apenas as rotas privadas.
- * Injeta `request.session` tipado e retorna 401 se não autenticado.
- *
- * Uso:
- *   await app.register(async (privateApp) => {
- *     privateApp.register(authenticate);
- *     privateApp.register(minhaRota);
- *   });
+ * Plugin de autenticação.
+ * Usamos fastify-plugin para que as decorações (request.session) sejam visíveis fora do escopo deste arquivo.
  */
-export const authenticate = async (fastify: import("fastify").FastifyInstance) => {
-  // decorateRequest com getter/setter — padrão exigido pelo Fastify para tipos não-primitivos
+export const authenticate = fp(async (fastify: import("fastify").FastifyInstance) => {
+  // Propriedade interna para armazenar o valor da sessão
+  fastify.decorateRequest("_session", null);
+
+  // Getter/setter para a sessão — agora busca e salva na propriedade interna
   fastify.decorateRequest("session", {
     getter() {
-      return null as unknown as AuthSession;
+      return this._session as AuthSession;
+    },
+    setter(value) {
+      this._session = value;
     },
   });
 
@@ -45,4 +46,4 @@ export const authenticate = async (fastify: import("fastify").FastifyInstance) =
 
     request.session = session;
   });
-};
+});
