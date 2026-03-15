@@ -2,6 +2,8 @@ import { z } from "zod";
 
 import { Weekday } from "../generated/prisma/enums.js";
 
+const WEEKDAY_COUNT = Object.values(Weekday).length;
+
 export const ErrorSchema = z.object({
   error: z.string(),
   code: z.string(),
@@ -40,13 +42,31 @@ export const WorkoutDayInputSchema = z.object({
   coverImageUrl: z.string().url().optional(),
   isRest: z.boolean().default(false),
   weekday: z.nativeEnum(Weekday),
-  estimatedDurationInSeconds: z.number().min(1),
+  estimatedDurationInSeconds: z.number().min(0),
   exercises: z.array(WorkoutExerciseInputSchema),
 });
 
 export const CreateWorkoutPlanBodySchema = z.object({
   name: z.string().trim().min(1),
-  workoutDays: z.array(WorkoutDayInputSchema),
+  workoutDays: z
+    .array(WorkoutDayInputSchema)
+    .length(WEEKDAY_COUNT, "O plano deve conter exatamente 7 dias")
+    .superRefine((workoutDays, ctx) => {
+      const seenWeekdays = new Set<Weekday>();
+
+      workoutDays.forEach((workoutDay, index) => {
+        if (seenWeekdays.has(workoutDay.weekday)) {
+          ctx.addIssue({
+            code: "custom",
+            message: `O dia ${workoutDay.weekday} estÃ¡ duplicado no plano`,
+            path: [index, "weekday"],
+          });
+          return;
+        }
+
+        seenWeekdays.add(workoutDay.weekday);
+      });
+    }),
 });
 
 export const WorkoutExerciseResponseSchema = z.object({
@@ -64,7 +84,7 @@ export const WorkoutDayResponseSchema = z.object({
   coverImageUrl: z.string().url().nullable().optional(),
   weekday: z.nativeEnum(Weekday),
   isRest: z.boolean(),
-  estimatedDurationInSeconds: z.number().int().min(1),
+  estimatedDurationInSeconds: z.number().int().min(0),
   workoutExercises: z.array(WorkoutExerciseResponseSchema),
 });
 
@@ -201,7 +221,7 @@ export const UpsertUserTrainDataBodySchema = z.object({
   weightInGrams: z.number().int().positive(),
   heightInCentimeters: z.number().int().positive(),
   age: z.number().int().positive(),
-  bodyFatPercentage: z.number().min(0).max(1),
+  bodyFatPercentage: z.number().int().min(0).max(100),
 });
 
 export const UserTrainDataResponseSchema = z.object({

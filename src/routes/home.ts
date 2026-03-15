@@ -23,22 +23,14 @@ export const homeRoutes = async (app: FastifyInstance) => {
       },
     },
     handler: async (request, reply) => {
-      try {
-        const getHomeData = new GetHomeData();
+      const getHomeData = new GetHomeData();
 
-        const result = await getHomeData.execute({
-          userId: request.session.user.id,
-          date: request.params.date,
-        });
+      const result = await getHomeData.execute({
+        userId: request.session.user.id,
+        date: request.params.date,
+      });
 
-        return reply.status(200).send(result);
-      } catch (error) {
-        app.log.error(error);
-        return reply.status(500).send({
-          error: "Erro interno do servidor",
-          code: "INTERNAL_SERVER_ERROR",
-        });
-      }
+      return reply.status(200).send(result);
     },
   });
 };

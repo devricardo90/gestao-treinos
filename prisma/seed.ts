@@ -1,6 +1,6 @@
-import { PrismaClient } from '../src/generated/prisma/index.js';
+import "dotenv/config";
 
-const prisma = new PrismaClient();
+import { prisma } from "../src/lib/db.js";
 
 async function main() {
   console.log("Starting DB Seed...");
@@ -139,7 +139,7 @@ async function main() {
   console.log(`✅ Seed gerada com sucesso! Treino "${plan.name}" salvo com ${plan.workoutDays.length} dias variados.`);
 
   // Opcional: Criar uma SESSÃO finalizada na Terça-Feira para o "Consistência" marcar como azul (100%) no front-end
-  const tuesdayDay = plan.workoutDays.find(d => d.weekday === "TUESDAY");
+  const tuesdayDay = plan.workoutDays.find((d) => d.weekday === "TUESDAY");
   if (tuesdayDay) {
     // Session 2 dias atrás
     const d = new Date();
@@ -157,7 +157,7 @@ async function main() {
   }
 
   // Opcional: Criar uma SESSÃO iniciada (mas incompleta) na Quarta-Feira para a "Consistência" marcar como pontinho azul no front-end
-  const thursdayDay = plan.workoutDays.find(d => d.weekday === "THURSDAY");
+  const thursdayDay = plan.workoutDays.find((d) => d.weekday === "THURSDAY");
   if (thursdayDay) {
     const d2 = new Date();
     d2.setDate(d2.getDate() - 1); 

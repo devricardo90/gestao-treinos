@@ -39,10 +39,10 @@ export class GetUserTrainData {
     return {
       userId: user.id,
       userName: user.name,
-      weightInGrams: (user as any).weightInGrams,
-      heightInCentimeters: (user as any).heightInCentimeters,
-      age: (user as any).age,
-      bodyFatPercentage: (user as any).bodyFatPercentage,
+      weightInGrams: user.weightInGrams,
+      heightInCentimeters: user.heightInCentimeters,
+      age: user.age,
+      bodyFatPercentage: user.bodyFatPercentage,
     };
   }
 }

@@ -14,7 +14,7 @@ import {
 import { z } from "zod";
 
 import { auth } from "./lib/auth.js";
-import { prisma } from "./lib/prisma.js";
+import { prisma } from "./lib/db.js";
 import { authenticate } from "./plugins/authenticate.js";
 import { errorHandler } from "./plugins/error-handler.js";
 import { aiRoutes } from "./routes/ai.js";

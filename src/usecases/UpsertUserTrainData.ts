@@ -20,7 +20,7 @@ export class UpsertUserTrainData {
   async execute(
     dto: UpsertUserTrainDataInputDto,
   ): Promise<UpsertUserTrainDataOutputDto> {
-    const user = await (prisma.user.update as any)({
+    const user = await prisma.user.update({
       where: { id: dto.userId },
       data: {
         weightInGrams: dto.weightInGrams,
@@ -30,12 +30,21 @@ export class UpsertUserTrainData {
       },
     });
 
+    if (
+      user.weightInGrams === null ||
+      user.heightInCentimeters === null ||
+      user.age === null ||
+      user.bodyFatPercentage === null
+    ) {
+      throw new Error("Falha ao persistir os dados de treino do usuário");
+    }
+
     return {
       userId: user.id,
-      weightInGrams: (user as any).weightInGrams as number,
-      heightInCentimeters: (user as any).heightInCentimeters as number,
-      age: (user as any).age as number,
-      bodyFatPercentage: (user as any).bodyFatPercentage as number,
+      weightInGrams: user.weightInGrams,
+      heightInCentimeters: user.heightInCentimeters,
+      age: user.age,
+      bodyFatPercentage: user.bodyFatPercentage,
     };
   }
 }

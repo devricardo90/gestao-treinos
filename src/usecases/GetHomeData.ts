@@ -131,11 +131,11 @@ export class GetHomeData {
         .utc(completedSessions[0].startedAt)
         .startOf("day");
 
-      // If the last completed session was today or yesterday, start counting
-      const today = dayjs.utc().startOf("day");
+      // If the last completed session was on the target date or the day before, start counting
+      const referenceDate = targetDate.startOf("day");
       if (
-        currentStreakDate.isSame(today) ||
-        currentStreakDate.isSame(today.subtract(1, "day"))
+        currentStreakDate.isSame(referenceDate) ||
+        currentStreakDate.isSame(referenceDate.subtract(1, "day"))
       ) {
         streak = 1;
         const uniqueDates = Array.from(

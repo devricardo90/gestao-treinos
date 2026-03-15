@@ -42,10 +42,9 @@ export const aiRoutes = async (app: FastifyInstance) => {
       },
     },
     handler: async (request, reply) => {
-      try {
-        const { messages } = request.body as { messages: UIMessage[] };
+      const { messages } = request.body as { messages: UIMessage[] };
 
-        const result = streamText({
+      const result = streamText({
           model: google("gemini-2.5-flash"),
           system: `Você é um personal trainer virtual especialista em montagem de planos de treino.
 Seu tom é amigável, motivador e você usa linguagem simples, sem jargões técnicos.
@@ -175,25 +174,18 @@ Respostas curtas e objetivas sempre.`,
         });
 
         // Verifica se o limite de steps foi atingido sem concluir
-        const finalSteps = await result.steps;
-        if (finalSteps.length >= 10) {
-          app.log.warn({ userId: request.session.user.id }, "AI step limit reached");
-        }
-
-        const response = result.toUIMessageStreamResponse();
-
-        reply.status(response.status as 200 | 401 | 500);
-
-        response.headers.forEach((value, key) => reply.header(key, value));
-
-        return reply.send(response.body);
-      } catch (error) {
-        app.log.error(error);
-        return reply.status(500).send({
-          error: "Erro interno do servidor",
-          code: "INTERNAL_SERVER_ERROR",
-        });
+      const finalSteps = await result.steps;
+      if (finalSteps.length >= 10) {
+        app.log.warn({ userId: request.session.user.id }, "AI step limit reached");
       }
+
+      const response = result.toUIMessageStreamResponse();
+
+      reply.status(response.status as 200 | 401 | 500);
+
+      response.headers.forEach((value, key) => reply.header(key, value));
+
+      return reply.send(response.body);
     },
   });
 };

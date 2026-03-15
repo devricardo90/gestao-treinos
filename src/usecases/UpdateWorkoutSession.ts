@@ -1,4 +1,9 @@
-import { NotFoundError, UnauthorizedError } from "../errors/index.js";
+import {
+  BadRequestError,
+  ConflictError,
+  NotFoundError,
+  UnauthorizedError,
+} from "../errors/index.js";
 import { prisma } from "../lib/db.js";
 
 export interface UpdateWorkoutSessionInputDto {
@@ -24,12 +29,12 @@ export class UpdateWorkoutSession {
     });
 
     if (!workoutPlan) {
-      throw new NotFoundError("Plano de treino não encontrado");
+      throw new NotFoundError("Plano de treino nÃ£o encontrado");
     }
 
     if (workoutPlan.userId !== dto.userId) {
       throw new UnauthorizedError(
-        "Apenas o dono do plano pode atualizar uma sessão",
+        "Apenas o dono do plano pode atualizar uma sessÃ£o",
       );
     }
 
@@ -45,7 +50,15 @@ export class UpdateWorkoutSession {
       session.workoutDayId !== dto.workoutDayId ||
       session.workoutDay.workoutPlanId !== dto.workoutPlanId
     ) {
-      throw new NotFoundError("Sessão de treino não encontrada");
+      throw new NotFoundError("SessÃ£o de treino nÃ£o encontrada");
+    }
+
+    if (session.completedAt) {
+      throw new ConflictError("Esta sessÃ£o de treino jÃ¡ foi finalizada");
+    }
+
+    if (dto.completedAt < session.startedAt) {
+      throw new BadRequestError("A data de conclusÃ£o nÃ£o pode ser anterior ao inÃ­cio");
     }
 
     const updatedSession = await prisma.workoutSession.update({
@@ -56,7 +69,7 @@ export class UpdateWorkoutSession {
     });
 
     if (!updatedSession.completedAt) {
-        throw new Error("Falha ao atualizar a data de conclusão");
+      throw new Error("Falha ao atualizar a data de conclusÃ£o");
     }
 
     return {

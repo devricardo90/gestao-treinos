@@ -24,20 +24,12 @@ export const userRoutes = async (app: FastifyInstance) => {
       },
     },
     handler: async (request, reply) => {
-      try {
-        const getUserTrainData = new GetUserTrainData();
-        const result = await getUserTrainData.execute({
-          userId: request.session.user.id,
-        });
+      const getUserTrainData = new GetUserTrainData();
+      const result = await getUserTrainData.execute({
+        userId: request.session.user.id,
+      });
 
-        return reply.status(200).send(result);
-      } catch (error) {
-        app.log.error(error);
-        return reply.status(500).send({
-          error: "Erro interno do servidor",
-          code: "INTERNAL_SERVER_ERROR",
-        });
-      }
+      return reply.status(200).send(result);
     },
   });
 
@@ -61,21 +53,13 @@ export const userRoutes = async (app: FastifyInstance) => {
       },
     },
     handler: async (request, reply) => {
-      try {
-        const upsertUserTrainData = new UpsertUserTrainData();
-        const result = await upsertUserTrainData.execute({
-          userId: request.session.user.id,
-          ...request.body,
-        });
+      const upsertUserTrainData = new UpsertUserTrainData();
+      const result = await upsertUserTrainData.execute({
+        userId: request.session.user.id,
+        ...request.body,
+      });
 
-        return reply.status(200).send(result);
-      } catch (error) {
-        app.log.error(error);
-        return reply.status(500).send({
-          error: "Erro interno do servidor",
-          code: "INTERNAL_SERVER_ERROR",
-        });
-      }
+      return reply.status(200).send(result);
     },
   });
 };
